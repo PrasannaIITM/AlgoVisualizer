@@ -197,7 +197,7 @@ def algorithm_bfs(draw, grid, start, end):
 
 def algorithm_dfs(draw, grid, start, end):
 	stack = [start]
-
+	print(start)
 	while stack != []:
 		for event in pygame.event.get():
 			if event.type == pygame.QUIT:
@@ -223,6 +223,57 @@ def algorithm_dfs(draw, grid, start, end):
 
 		
 	return False
+
+def minDistance(dist, seen):
+	min_ = float("inf")
+	n = len(seen)
+	min_node = None
+	for row in range(n):
+		for col in range(n):
+			if dist[row][col] < min_ and not seen[row][col]:
+				min_ = dist[row][col]
+				min_node = (row, col)
+				
+	return min_node
+	
+	
+def algorithm_dijkstra(draw, grid, start, end):
+	n = len(grid)
+	dist = [[float("inf") for j in range(n)]for i in range(n)]
+	dist[start.row][start.col] = 0
+	seen = [[False for j in range(n)]for i in range(n)]
+	weight = 1
+	while True:
+		pos = minDistance(dist, seen)
+		if pos == None:
+			break
+		row, col = pos
+		current = grid[row][col]
+		seen[row][col] = True
+		if (row, col) == (end.row, end.col):
+			reconstruct_path(current, start, draw)
+			end.make_end()
+			return True
+			
+		for neighbour in grid[row][col].neighbours:
+			(nrow, ncol) = (neighbour.row, neighbour.col)
+			if dist[nrow][ncol] > dist[row][col] + weight:
+				neighbour.make_open()
+				neighbour.assign_parent(current)
+				dist[nrow][ncol] = dist[row][col] + weight
+				
+		draw()
+
+		if (row, col) != (start.row, start.col):
+			current.make_closed()
+
+		
+	return False
+				
+		
+				
+		
+
 
 def make_grid(rows,width):
 	grid = []
@@ -332,6 +383,13 @@ def main(win, width):
 							node.update_neighbours(grid)
 
 					algorithm_dfs(lambda: draw(win, grid, ROWS, width, text = "Depth First Search Algorithm"), grid, start, end)
+					
+				if event.key == pygame.K_j and start and end:
+					for row in grid:
+						for node in row:
+							node.update_neighbours(grid)
+
+					algorithm_dijkstra(lambda: draw(win, grid, ROWS, width, text = "Dijkstra's Algorithm"), grid, start, end)
 
 				if event.key == pygame.K_c:
 					start = None
