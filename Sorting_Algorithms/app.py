@@ -1,6 +1,7 @@
 import time
 import numpy as np
 import scipy as sp
+from scipy.io import wavfile
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 class TrackedArray():
@@ -37,13 +38,32 @@ class TrackedArray():
     def __len__(self):
         return self.array.__len__()
 
+def freq_map(x, xmin = 0, xmax = 1000, fmin = 120, fmax = 1200):
+    return np.interp(x, [xmin, xmax], [fmin, fmax])
 
-plt.style.use('dark_background')  # comment out for "light" theme
+def freq_sample(freq, dt=1./60., samplerate=44100, oversample=2):
+    """Create a sample with a specific freqency {freq} for a specified
+    time {dt}"""
+    mid_samples = np.int(dt * samplerate)
+    pad_samples = np.int((mid_samples*(oversample-1)/2))
+    total_samples = mid_samples + 2*pad_samples
+
+    y = np.sin(2 * np.pi * freq * np.linspace(0, dt, total_samples))
+    y[:pad_samples] = y[:pad_samples] * np.linspace(0, 1, pad_samples)
+    y[- pad_samples:] = y[len(y) - pad_samples:] * \
+        np.linspace(1, 0, pad_samples)
+
+    return y
+
+plt.style.use('dark_background')  
 plt.rcParams["figure.figsize"] = (12, 8)
 plt.rcParams["font.size"] = 16
 
 N = 30
 FPS = 60
+
+F_SAMPLE = 44100
+OVERSAMPLE = 2
 
 arr = np.round(np.linspace(1, 1000, N))
 np.random.seed(0)
@@ -121,9 +141,29 @@ quicksort(arr, 0, len(arr)-1)
 tic = time.time()
 time_taken = tic - toc
 print(f"---------- {algorithm} Sort ----------")
-
 print(f"Array Sorted in {time_taken*1E3:.1f} ms")
+
+wav_data = np.zeros(np.int(F_SAMPLE*len(arr.values)*1./FPS), dtype=np.float)
+dN = np.int(F_SAMPLE * 1./FPS)  # how many samples is each chunk
+
+for i, value in enumerate(arr.values):
+    freq = freq_map(value)
+    sample = freq_sample(freq, dt=1./FPS, samplerate=F_SAMPLE,
+                         oversample=OVERSAMPLE)
+
     
+    idx_0 = np.int((i+0.5)*dN - len(sample)/2)
+    idx_1 = idx_0 + len(sample)
+
+    try:
+        wav_data[idx_0:idx_1] = wav_data[idx_0:idx_1] + sample
+    except ValueError:
+        print(f"Failed to generate {i:.0f}th index sample")
+
+
+wav_data = (2**15*(wav_data/np.max(np.abs(wav_data)))).astype(np.int16)
+sp.io.wavfile.write(f"{algorithm}_sound.wav", F_SAMPLE, wav_data)
+
 fig, ax = plt.subplots()
 container = ax.bar(np.arange(0, len(arr), 1), arr, align = "edge", width = 0.8)
 ax.set_xlim([0, N])
