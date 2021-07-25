@@ -36,4 +36,11 @@ After selecting the boxes, press ```j``` to find the path using dijkstra's algor
 <b>Sudoku</b>
 <br>
 <br>
+Visualizing the backtracking algorithm for solving sudoku.
+<br>
+<br>
+![sudoku](https://github.com/PrasannaIITM/AlgoVisualizer/blob/main/Sudoku/Demo/Screencast%20from%2025-07-21%2006_24_06%20PM%20IST.gif)
+<br>
+<br>
+<b>Sorting Algorithms</b>
 
